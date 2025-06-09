@@ -516,15 +516,18 @@ class AudioDataset(Dataset):
 
     # This one is significantly slower than "wav_feature_extraction_torchaudio" if num_worker > 1
     def wav_feature_extraction(self, waveform):
+        print("2.1.1")
         waveform = waveform[0, ...]
+        print("2.1.2")
         waveform = torch.FloatTensor(waveform)
-
+        print("2.1.3")
         # log_mel_spec, stft, energy = Audio.tools.get_mel_from_wav(waveform, self.STFT)[0]
         log_mel_spec, stft = self.mel_spectrogram_train(waveform.unsqueeze(0))
-
+        print("2.1.4")
         log_mel_spec = torch.FloatTensor(log_mel_spec.T)
+        print("2.1.5")
         stft = torch.FloatTensor(stft.T)
-
+        print("2.1.6")
         log_mel_spec, stft = self.pad_spec(log_mel_spec), self.pad_spec(stft)
         return log_mel_spec, stft
 
