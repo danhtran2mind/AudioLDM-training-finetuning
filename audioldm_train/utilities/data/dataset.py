@@ -466,13 +466,22 @@ class AudioDataset(Dataset):
             print("train max value is ", torch.max(y))
 
         if self.mel_fmax not in self.mel_basis:
-            mel = librosa_mel_fn(
-                self.sampling_rate,
-                self.filter_length,
-                self.n_mel,
-                self.mel_fmin,
-                self.mel_fmax,
+            # mel = librosa_mel_fn(
+            #     self.sampling_rate,
+            #     self.filter_length,
+            #     self.n_mel,
+            #     self.mel_fmin,
+            #     self.mel_fmax,
+            # )
+            
+            mel = librosa.filters.mel(
+            sr=self.sampling_rate,
+            n_fft=self.filter_length,
+            n_mels=self.n_mel,
+            fmin=self.mel_fmin,
+            fmax=self.mel_fmax
             )
+            
             self.mel_basis[str(self.mel_fmax) + "_" + str(y.device)] = (
                 torch.from_numpy(mel).float().to(y.device)
             )
