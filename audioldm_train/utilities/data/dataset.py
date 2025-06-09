@@ -147,7 +147,9 @@ class AudioDataset(Dataset):
         # Read wave file and extract feature
         while True:
             try:
+                print("here 1")
                 label_indices = np.zeros(self.label_num, dtype=np.float32)
+                print("here 2")
                 datum = self.data[index]
                 (
                     log_mel_spec,
@@ -155,19 +157,22 @@ class AudioDataset(Dataset):
                     waveform,
                     random_start,
                 ) = self.read_audio_file(datum["wav"])
+                print("here 3")
                 mix_datum = None
+                print("here 4")
                 if self.label_num > 0 and "labels" in datum.keys():
+                    print("here 1")
                     for label_str in datum["labels"].split(","):
                         label_indices[int(self.index_dict[label_str])] = 1.0
-
+                print("here 5")
                 # If the key "label" is not in the metadata, return all zero vector
                 label_indices = torch.FloatTensor(label_indices)
                 break
             except Exception as e:
                 index = (index + 1) % len(self.data)
-                print(
-                    "Error encounter during audio feature extraction: ", e, datum["wav"]
-                )
+                # print(
+                #     "Error encounter during audio feature extraction: ", e, datum["wav"]
+                # )
                 continue
 
         # The filename of the wav file
