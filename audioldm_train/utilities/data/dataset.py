@@ -473,7 +473,7 @@ class AudioDataset(Dataset):
             #     self.mel_fmin,
             #     self.mel_fmax,
             # )
-            
+            print("2.1.3.1")
             mel = librosa.filters.mel(
             sr=self.sampling_rate,
             n_fft=self.filter_length,
@@ -481,14 +481,15 @@ class AudioDataset(Dataset):
             fmin=self.mel_fmin,
             fmax=self.mel_fmax
             )
-            
+            print("2.1.3.2")
             self.mel_basis[str(self.mel_fmax) + "_" + str(y.device)] = (
                 torch.from_numpy(mel).float().to(y.device)
             )
+            print("2.1.3.3")
             self.hann_window[str(y.device)] = torch.hann_window(self.win_length).to(
                 y.device
             )
-
+        print("2.1.3.4")
         y = torch.nn.functional.pad(
             y.unsqueeze(1),
             (
@@ -497,9 +498,9 @@ class AudioDataset(Dataset):
             ),
             mode="reflect",
         )
-
+        print("2.1.3.5")
         y = y.squeeze(1)
-
+        print("2.1.3.6")
         stft_spec = torch.stft(
             y,
             self.filter_length,
@@ -512,15 +513,15 @@ class AudioDataset(Dataset):
             onesided=True,
             return_complex=True,
         )
-
+        print("2.1.3.7")
         stft_spec = torch.abs(stft_spec)
-
+        print("2.1.3.8")
         mel = spectral_normalize_torch(
             torch.matmul(
                 self.mel_basis[str(self.mel_fmax) + "_" + str(y.device)], stft_spec
             )
         )
-
+        print("2.1.3.9")
         return mel[0], stft_spec[0]
 
     # This one is significantly slower than "wav_feature_extraction_torchaudio" if num_worker > 1
