@@ -627,7 +627,7 @@ if __name__ == "__main__":
     dataset = AudioDataset(
         config=config, split="train", waveform_only=False, add_ons=add_ons
     )
-
+    print("AudioLDM-training-finetuning/audioldm_train/utilities/data/dataset.py")
     loader = DataLoader(dataset, batch_size=1, num_workers=0, shuffle=True)
 
     for cnt, each in tqdm(enumerate(loader)):
