@@ -24,7 +24,7 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import WandbLogger
 
 import os
-print(os.path.join(os.path.dirname(__file__)))
+os.chdir(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__))))
 
 from audioldm_train.utilities.data.dataset import AudioDataset
