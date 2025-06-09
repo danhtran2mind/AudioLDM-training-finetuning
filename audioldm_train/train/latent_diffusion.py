@@ -164,7 +164,8 @@ def main(configs, config_yaml_path, exp_group_name, exp_name, perform_validation
         num_sanity_val_steps=1,
         limit_val_batches=limit_val_batches,
         check_val_every_n_epoch=validation_every_n_epochs,
-        strategy=DDPStrategy(find_unused_parameters=True) if accelerator == "gpu" and devices > 1 else None,
+        # strategy=DDPStrategy(find_unused_parameters=True) if accelerator == "gpu" and devices > 1 else None,
+        strategy='auto',
         callbacks=[checkpoint_callback],
     )
 
