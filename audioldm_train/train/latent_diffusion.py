@@ -4,7 +4,7 @@
 
 import sys
 
-sys.path.append("src")
+
 import shutil
 import os
 
@@ -16,12 +16,17 @@ import torch
 
 from tqdm import tqdm
 from pytorch_lightning.strategies.ddp import DDPStrategy
-from audioldm_train.utilities.data.dataset import AudioDataset
+
 
 from torch.utils.data import DataLoader
 from pytorch_lightning import Trainer, seed_everything
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import WandbLogger
+
+project_root = "/content/AudioLDM-training-finetuning"
+sys.path.insert(0, project_root)
+
+from audioldm_train.utilities.data.dataset import AudioDataset
 from audioldm_train.utilities.tools import (
     get_restore_step,
     copy_test_subset_data,
@@ -36,8 +41,7 @@ def print_on_rank0(msg):
     if torch.distributed.get_rank() == 0:
         print(msg)
 
-
-def main(configs, config_yaml_path, exp_group_name, exp_name, perform_validation):
+def main(configs, config_yaml_path, exp_group_name, exp_name, perform_validation, accelerator):
     if "seed" in configs.keys():
         seed_everything(configs["seed"])
     else:
@@ -45,9 +49,7 @@ def main(configs, config_yaml_path, exp_group_name, exp_name, perform_validation
         seed_everything(0)
 
     if "precision" in configs.keys():
-        torch.set_float32_matmul_precision(
-            configs["precision"]
-        )  # highest, high, medium
+        torch.set_float32_matmul_precision(configs["precision"])  # highest, high, medium
 
     log_path = configs["log_directory"]
     batch_size = configs["model"]["params"]["batchsize"]
@@ -62,8 +64,8 @@ def main(configs, config_yaml_path, exp_group_name, exp_name, perform_validation
     loader = DataLoader(
         dataset,
         batch_size=batch_size,
-        num_workers=16,
-        pin_memory=True,
+        num_workers=16 if accelerator == "gpu" else 4,  # Reduce workers for CPU
+        pin_memory=accelerator == "gpu",  # Disable pin_memory for CPU
         shuffle=True,
     )
 
@@ -77,6 +79,8 @@ def main(configs, config_yaml_path, exp_group_name, exp_name, perform_validation
     val_loader = DataLoader(
         val_dataset,
         batch_size=8,
+        num_workers=4,
+        pin_memory=accelerator == "gpu",
     )
 
     # Copy test data
@@ -135,7 +139,7 @@ def main(configs, config_yaml_path, exp_group_name, exp_name, perform_validation
         print("Train from scratch")
         resume_from_checkpoint = None
 
-    devices = torch.cuda.device_count()
+    devices = torch.cuda.device_count() if accelerator == "gpu" else 1
 
     latent_diffusion = instantiate_from_config(configs["model"])
     latent_diffusion.set_log_dir(log_path, exp_group_name, exp_name)
@@ -153,14 +157,14 @@ def main(configs, config_yaml_path, exp_group_name, exp_name, perform_validation
     print("==> Perform validation every %s epochs" % validation_every_n_epochs)
 
     trainer = Trainer(
-        accelerator="gpu",
+        accelerator=accelerator,
         devices=devices,
         logger=wandb_logger,
         max_steps=max_steps,
         num_sanity_val_steps=1,
         limit_val_batches=limit_val_batches,
         check_val_every_n_epoch=validation_every_n_epochs,
-        strategy=DDPStrategy(find_unused_parameters=True),
+        strategy=DDPStrategy(find_unused_parameters=True) if accelerator == "gpu" and devices > 1 else None,
         callbacks=[checkpoint_callback],
     )
 
@@ -186,16 +190,7 @@ def main(configs, config_yaml_path, exp_group_name, exp_name, perform_validation
                     del ckpt[key]
                     size_mismatch_keys.append(key)
 
-            # if(len(key_not_in_model_state_dict) != 0 or len(size_mismatch_keys) != 0):
-            # print("⛳", end=" ")
-
-            # print("==> Warning: The following key in the checkpoint is not presented in the model:", key_not_in_model_state_dict)
-            # print("==> Warning: These keys have different size between checkpoint and current model: ", size_mismatch_keys)
-
             latent_diffusion.load_state_dict(ckpt, strict=False)
-
-        # if(perform_validation):
-        #     trainer.validate(latent_diffusion, val_loader)
 
         trainer.fit(latent_diffusion, loader, val_loader)
     else:
@@ -203,17 +198,15 @@ def main(configs, config_yaml_path, exp_group_name, exp_name, perform_validation
             latent_diffusion, loader, val_loader, ckpt_path=resume_from_checkpoint
         )
 
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-c",
         "--config_yaml",
         type=str,
-        required=False,
+        required=True,
         help="path to config .yaml file",
     )
-
     parser.add_argument(
         "--reload_from_ckpt",
         type=str,
@@ -221,17 +214,28 @@ if __name__ == "__main__":
         default=None,
         help="path to pretrained checkpoint",
     )
-
-    parser.add_argument("--val", action="store_true")
+    parser.add_argument(
+        "--val",
+        action="store_true",
+        help="perform validation",
+    )
+    parser.add_argument(
+        "--accelerator",
+        type=str,
+        default="gpu",
+        choices=["gpu", "cpu"],
+        help="accelerator type: gpu or cpu",
+    )
 
     args = parser.parse_args()
 
     perform_validation = args.val
+    accelerator = args.accelerator
 
-    assert torch.cuda.is_available(), "CUDA is not available"
+    if accelerator == "gpu" and not torch.cuda.is_available():
+        raise RuntimeError("CUDA is not available, use --accelerator cpu instead")
 
     config_yaml = args.config_yaml
-
     exp_name = os.path.basename(config_yaml.split(".")[0])
     exp_group_name = os.path.basename(os.path.dirname(config_yaml))
 
@@ -247,4 +251,4 @@ if __name__ == "__main__":
         ]["params"]["use_gt_mae_output"] = False
         config_yaml["step"]["limit_val_batches"] = None
 
-    main(config_yaml, config_yaml_path, exp_group_name, exp_name, perform_validation)
+    main(config_yaml, config_yaml_path, exp_group_name, exp_name, perform_validation, accelerator)
