@@ -8,7 +8,7 @@ import torch
 from torch.utils.data import DataLoader
 from pytorch_lightning import seed_everything
 
-sys.path.append("src")
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
 from utilities.data.dataset import AudioDataset
 
