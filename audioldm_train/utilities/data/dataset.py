@@ -148,12 +148,9 @@ class AudioDataset(Dataset):
         # Read wave file and extract feature
         while True:
             try:
-                print("here 1")
                 label_indices = np.zeros(self.label_num, dtype=np.float32)
-                print("here 2")
                 # Get data item
                 datum = self.data[index]
-                print("datum: ", datum)
                 # Read and process audio file
                 log_mel_spec, stft, waveform, random_start = self.read_audio_file(datum["wav"])
                 
@@ -164,22 +161,19 @@ class AudioDataset(Dataset):
                 #     waveform,
                 #     random_start,
                 # ) = self.read_audio_file(datum["wav"])
-                print("here 3")
                 mix_datum = None
-                print("here 4")
                 if self.label_num > 0 and "labels" in datum.keys():
-                    print("here 1")
                     for label_str in datum["labels"].split(","):
                         label_indices[int(self.index_dict[label_str])] = 1.0
-                print("here 5")
                 # If the key "label" is not in the metadata, return all zero vector
                 label_indices = torch.FloatTensor(label_indices)
+                print("here 6")
                 break
             except Exception as e:
                 index = (index + 1) % len(self.data)
-                # print(
-                #     "Error encounter during audio feature extraction: ", e, datum["wav"]
-                # )
+                print(
+                    "Error encounter during audio feature extraction: ", e, datum["wav"]
+                )
                 continue
 
         # The filename of the wav file
@@ -443,10 +437,8 @@ class AudioDataset(Dataset):
 
         # log_mel_spec, stft = self.wav_feature_extraction_torchaudio(waveform) # this line is faster, but this implementation is not aligned with HiFi-GAN
         if not self.waveform_only:
-            print("2.1")
             log_mel_spec, stft = self.wav_feature_extraction(waveform)
         else:
-            print("2.2")
             # Load waveform data only
             # Use zero array to keep the format unified
             log_mel_spec, stft = None, None
@@ -466,7 +458,6 @@ class AudioDataset(Dataset):
             print("train max value is ", torch.max(y))
 
         if self.mel_fmax not in self.mel_basis:
-            print("2.1.3.1")
             mel = librosa_mel_fn(
                 sr=self.sampling_rate,
                 n_fft=self.filter_length,
@@ -474,17 +465,14 @@ class AudioDataset(Dataset):
                 fmin=self.mel_fmin,
                 fmax=self.mel_fmax
             )
-            
-
-            print("2.1.3.2")
             self.mel_basis[str(self.mel_fmax) + "_" + str(y.device)] = (
                 torch.from_numpy(mel).float().to(y.device)
             )
-            print("2.1.3.3")
+
             self.hann_window[str(y.device)] = torch.hann_window(self.win_length).to(
                 y.device
             )
-        print("2.1.3.4")
+
         y = torch.nn.functional.pad(
             y.unsqueeze(1),
             (
@@ -493,9 +481,9 @@ class AudioDataset(Dataset):
             ),
             mode="reflect",
         )
-        print("2.1.3.5")
+
         y = y.squeeze(1)
-        print("2.1.3.6")
+
         stft_spec = torch.stft(
             y,
             self.filter_length,
@@ -508,31 +496,24 @@ class AudioDataset(Dataset):
             onesided=True,
             return_complex=True,
         )
-        print("2.1.3.7")
+
         stft_spec = torch.abs(stft_spec)
-        print("2.1.3.8")
+
         mel = spectral_normalize_torch(
             torch.matmul(
                 self.mel_basis[str(self.mel_fmax) + "_" + str(y.device)], stft_spec
             )
         )
-        print("2.1.3.9")
         return mel[0], stft_spec[0]
 
     # This one is significantly slower than "wav_feature_extraction_torchaudio" if num_worker > 1
     def wav_feature_extraction(self, waveform):
-        print("2.1.1")
         waveform = waveform[0, ...]
-        print("2.1.2")
         waveform = torch.FloatTensor(waveform)
-        print("2.1.3")
         # log_mel_spec, stft, energy = Audio.tools.get_mel_from_wav(waveform, self.STFT)[0]
         log_mel_spec, stft = self.mel_spectrogram_train(waveform.unsqueeze(0))
-        print("2.1.4")
         log_mel_spec = torch.FloatTensor(log_mel_spec.T)
-        print("2.1.5")
         stft = torch.FloatTensor(stft.T)
-        print("2.1.6")
         log_mel_spec, stft = self.pad_spec(log_mel_spec), self.pad_spec(stft)
         return log_mel_spec, stft
 
