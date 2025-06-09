@@ -23,7 +23,7 @@ from pytorch_lightning import Trainer, seed_everything
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import WandbLogger
 
-sys.path.append("src")
+sys.path.append("audioldm_train")
 
 from audioldm_train.utilities.data.dataset import AudioDataset
 from audioldm_train.utilities.tools import (
