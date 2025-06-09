@@ -57,7 +57,7 @@ def load_state_dict(checkpoint_path: str, map_location="cpu", skip_params=True):
     # Add the problematic global to the safe globals list
     # torch.serialization.add_safe_globals(['numpy.core.multiarray.scalar'])
 
-    checkpoint = torch.load(checkpoint_path, map_location=map_location)
+    checkpoint = torch.load(checkpoint_path, map_location=map_location, weights_only=False)
     if isinstance(checkpoint, dict) and "state_dict" in checkpoint:
         state_dict = checkpoint["state_dict"]
     else:
