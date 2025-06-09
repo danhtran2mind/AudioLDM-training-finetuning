@@ -168,7 +168,7 @@ def main(configs, config_yaml_path, exp_group_name, exp_name, perform_validation
         strategy='auto',
         callbacks=[checkpoint_callback],
     )
-
+    print("Here 1")
     if is_external_checkpoints:
         if resume_from_checkpoint is not None:
             ckpt = torch.load(resume_from_checkpoint)["state_dict"]
@@ -195,6 +195,7 @@ def main(configs, config_yaml_path, exp_group_name, exp_name, perform_validation
 
         trainer.fit(latent_diffusion, loader, val_loader)
     else:
+        print("Here 2")
         trainer.fit(
             latent_diffusion, loader, val_loader, ckpt_path=resume_from_checkpoint
         )
