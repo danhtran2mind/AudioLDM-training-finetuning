@@ -9,6 +9,10 @@ from utilities.data.dataset import AudioDataset
 
 from torch.utils.data import DataLoader
 from pytorch_lightning import seed_everything
+
+project_root = "/content/AudioLDM-training-finetuning"
+sys.path.insert(0, project_root)
+
 from audioldm_train.utilities.tools import get_restore_step
 from audioldm_train.utilities.model_util import instantiate_from_config
 from audioldm_train.utilities.tools import build_dataset_json_from_list
