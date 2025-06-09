@@ -1,6 +1,7 @@
 import sys
-
-sys.path.append("src")
+project_root = "/content/AudioLDM-training-finetuning"
+sys.path.insert(0, project_root)
+# sys.path.append("src")
 import os
 import pandas as pd
 import yaml
