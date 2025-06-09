@@ -468,11 +468,11 @@ class AudioDataset(Dataset):
         if self.mel_fmax not in self.mel_basis:
             print("2.1.3.1")
             mel = librosa_mel_fn(
-                self.sampling_rate,
-                self.filter_length,
-                self.n_mel,
-                self.mel_fmin,
-                self.mel_fmax,
+                sr=self.sampling_rate,
+                n_fft=self.filter_length,
+                n_mels=self.n_mel,
+                fmin=self.mel_fmin,
+                fmax=self.mel_fmax
             )
             
 
