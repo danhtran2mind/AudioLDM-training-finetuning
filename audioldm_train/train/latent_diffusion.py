@@ -198,6 +198,7 @@ def main(configs, config_yaml_path, exp_group_name, exp_name, perform_validation
             latent_diffusion.load_state_dict(ckpt, strict=False)
             print("Here 1.1.6")
         trainer.fit(latent_diffusion, loader, val_loader)
+        print("Here 1.1.7")
     else:
         print("Here 2")
         trainer.fit(
