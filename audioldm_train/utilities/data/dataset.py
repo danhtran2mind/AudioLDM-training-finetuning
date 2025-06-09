@@ -167,7 +167,6 @@ class AudioDataset(Dataset):
                         label_indices[int(self.index_dict[label_str])] = 1.0
                 # If the key "label" is not in the metadata, return all zero vector
                 label_indices = torch.FloatTensor(label_indices)
-                print("here 6")
                 break
             except Exception as e:
                 index = (index + 1) % len(self.data)
