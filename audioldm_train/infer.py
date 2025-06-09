@@ -8,8 +8,7 @@ import torch
 from torch.utils.data import DataLoader
 from pytorch_lightning import seed_everything
 
-project_root = "/content/AudioLDM-training-finetuning"
-sys.path.insert(0, project_root)
+sys.path.append("src")
 
 from utilities.data.dataset import AudioDataset
 
