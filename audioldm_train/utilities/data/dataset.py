@@ -443,8 +443,10 @@ class AudioDataset(Dataset):
 
         # log_mel_spec, stft = self.wav_feature_extraction_torchaudio(waveform) # this line is faster, but this implementation is not aligned with HiFi-GAN
         if not self.waveform_only:
+            print("2.1")
             log_mel_spec, stft = self.wav_feature_extraction(waveform)
         else:
+            print("2.2")
             # Load waveform data only
             # Use zero array to keep the format unified
             log_mel_spec, stft = None, None
