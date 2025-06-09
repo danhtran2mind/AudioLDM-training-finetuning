@@ -7,6 +7,7 @@ from copy import deepcopy
 from pathlib import Path
 
 import torch
+import torch.serialization
 
 from .model import CLAP, convert_weights_to_fp16
 from .openai import load_openai_model
@@ -52,6 +53,10 @@ _rescan_model_configs()  # initial populate of model config registry
 
 
 def load_state_dict(checkpoint_path: str, map_location="cpu", skip_params=True):
+    
+    # Add the problematic global to the safe globals list
+    torch.serialization.add_safe_globals(['numpy.core.multiarray.scalar'])
+
     checkpoint = torch.load(checkpoint_path, map_location=map_location)
     if isinstance(checkpoint, dict) and "state_dict" in checkpoint:
         state_dict = checkpoint["state_dict"]
