@@ -64,7 +64,8 @@ def main(configs, config_yaml_path, exp_group_name, exp_name, perform_validation
     loader = DataLoader(
         dataset,
         batch_size=batch_size,
-        num_workers=16 if accelerator == "gpu" else 4,  # Reduce workers for CPU
+        # num_workers=16 if accelerator == "gpu" else 4,  # Reduce workers for CPU
+        num_workers=2,
         pin_memory=accelerator == "gpu",  # Disable pin_memory for CPU
         shuffle=True,
     )
@@ -79,7 +80,7 @@ def main(configs, config_yaml_path, exp_group_name, exp_name, perform_validation
     val_loader = DataLoader(
         val_dataset,
         batch_size=8,
-        num_workers=4,
+        num_workers=2,
         pin_memory=accelerator == "gpu",
     )
 
