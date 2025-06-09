@@ -151,13 +151,19 @@ class AudioDataset(Dataset):
                 print("here 1")
                 label_indices = np.zeros(self.label_num, dtype=np.float32)
                 print("here 2")
+                # Get data item
                 datum = self.data[index]
-                (
-                    log_mel_spec,
-                    stft,
-                    waveform,
-                    random_start,
-                ) = self.read_audio_file(datum["wav"])
+                print("datum: ", datum)
+                # Read and process audio file
+                log_mel_spec, stft, waveform, random_start = self.read_audio_file(datum["wav"])
+                
+                # datum = self.data[index]
+                # (
+                #     log_mel_spec,
+                #     stft,
+                #     waveform,
+                #     random_start,
+                # ) = self.read_audio_file(datum["wav"])
                 print("here 3")
                 mix_datum = None
                 print("here 4")
