@@ -169,16 +169,12 @@ def main(configs, config_yaml_path, exp_group_name, exp_name, perform_validation
         # strategy='auto',
         callbacks=[checkpoint_callback],
     )
-    print("Here 1")
     if is_external_checkpoints:
-        print("Here 1.1")
         if resume_from_checkpoint is not None:
-            print("Here 1.1.1")
             ckpt = torch.load(resume_from_checkpoint)["state_dict"]
             key_not_in_model_state_dict = []
             size_mismatch_keys = []
             state_dict = latent_diffusion.state_dict()
-            print("Here 1.1.2")
             print("Filtering key for reloading:", resume_from_checkpoint)
             print(
                 "State dict key size:",
@@ -186,18 +182,14 @@ def main(configs, config_yaml_path, exp_group_name, exp_name, perform_validation
                 len(list(ckpt.keys())),
             )
             for key in tqdm(list(ckpt.keys())):
-                print("Here 1.1.3")
                 if key not in state_dict.keys():
                     key_not_in_model_state_dict.append(key)
                     del ckpt[key]
                     continue
-                print("Here 1.1.4")
                 if state_dict[key].size() != ckpt[key].size():
                     del ckpt[key]
                     size_mismatch_keys.append(key)
-            print("Here 1.1.5")
             latent_diffusion.load_state_dict(ckpt, strict=False)
-            print("Here 1.1.6")
         trainer.fit(latent_diffusion, loader, val_loader)
         print("Here 1.1.7")
     else:
