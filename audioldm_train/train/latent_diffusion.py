@@ -23,8 +23,7 @@ from pytorch_lightning import Trainer, seed_everything
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import WandbLogger
 
-project_root = "/content/AudioLDM-training-finetuning"
-sys.path.insert(0, project_root)
+sys.path.append("src")
 
 from audioldm_train.utilities.data.dataset import AudioDataset
 from audioldm_train.utilities.tools import (
