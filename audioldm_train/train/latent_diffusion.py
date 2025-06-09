@@ -162,7 +162,7 @@ def main(configs, config_yaml_path, exp_group_name, exp_name, perform_validation
         devices=devices,
         logger=wandb_logger,
         max_steps=max_steps,
-        num_sanity_val_steps=1,
+        # num_sanity_val_steps=1,
         limit_val_batches=limit_val_batches,
         check_val_every_n_epoch=validation_every_n_epochs,
         strategy=DDPStrategy(find_unused_parameters=True) if accelerator == "gpu" else 'auto',
