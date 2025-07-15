@@ -1,21 +1,16 @@
 import shutil
 import os
-import sys
 import argparse
 import yaml
 import torch
-
-from torch.utils.data import DataLoader
-from pytorch_lightning import seed_everything
-
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+import numpy.core.multiarray  # Add this import for allowlisting
 
 from utilities.data.dataset import AudioDataset
-
+from torch.utils.data import DataLoader
+from pytorch_lightning import seed_everything
 from audioldm_train.utilities.tools import get_restore_step
 from audioldm_train.utilities.model_util import instantiate_from_config
 from audioldm_train.utilities.tools import build_dataset_json_from_list
-
 
 def infer(dataset_json, configs, config_yaml_path, exp_group_name, exp_name):
     if "seed" in configs.keys():
@@ -80,7 +75,11 @@ def infer(dataset_json, configs, config_yaml_path, exp_group_name, exp_name):
         "n_candidates_per_samples"
     ]
 
-    checkpoint = torch.load(resume_from_checkpoint)
+    # Allowlist the numpy scalar global for safe deserialization
+    torch.serialization.add_safe_globals([numpy.core.multiarray.scalar])
+
+    # Load the checkpoint with weights_only=True
+    checkpoint = torch.load(resume_from_checkpoint, weights_only=True)
     latent_diffusion.load_state_dict(checkpoint["state_dict"])
 
     latent_diffusion.eval()
@@ -93,7 +92,7 @@ def infer(dataset_json, configs, config_yaml_path, exp_group_name, exp_name):
         n_gen=n_candidates_per_samples,
     )
 
-
+# Rest of the script remains unchanged
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
