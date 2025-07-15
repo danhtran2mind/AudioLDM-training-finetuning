@@ -79,7 +79,11 @@ def infer(dataset_json, configs, config_yaml_path, exp_group_name, exp_name):
     n_candidates_per_samples = eval_params["n_candidates_per_samples"]
 
     # Allowlist numpy globals for safe deserialization
-    torch.serialization.add_safe_globals([numpy.core.multiarray.scalar, numpy.dtype])
+    torch.serialization.add_safe_globals([
+        numpy.core.multiarray.scalar,
+        numpy.dtype,
+        numpy.dtypes.Float64DType
+    ])
 
     try:
         # Load checkpoint with weights_only=True for security
