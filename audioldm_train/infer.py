@@ -1,9 +1,8 @@
 import os
-import sys
 import argparse
 import yaml
 import torch
-import numpy.core.multiarray  # Allowlisted for safe deserialization
+import numpy  # Import numpy for allowlisting
 from torch.utils.data import DataLoader
 from pytorch_lightning import seed_everything
 
@@ -78,8 +77,8 @@ def infer(dataset_json, configs, config_yaml_path, exp_group_name, exp_name):
     ddim_sampling_steps = eval_params["ddim_sampling_steps"]
     n_candidates_per_samples = eval_params["n_candidates_per_samples"]
 
-    # Allowlist numpy scalar for safe deserialization
-    torch.serialization.add_safe_globals([numpy.core.multiarray.scalar])
+    # Allowlist numpy globals for safe deserialization
+    torch.serialization.add_safe_globals([numpy.core.multiarray.scalar, numpy.dtype])
 
     try:
         # Load checkpoint with weights_only=True for security
