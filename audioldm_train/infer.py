@@ -15,89 +15,74 @@ from audioldm_train.utilities.tools import get_restore_step, build_dataset_json_
 from audioldm_train.utilities.model_util import instantiate_from_config
 
 def infer(dataset_json, configs, config_yaml_path, exp_group_name, exp_name):
-    """
-    Perform inference using the specified configuration and dataset.
-
-    Args:
-        dataset_json (str): Path to the dataset JSON file.
-        configs (dict): Configuration dictionary loaded from YAML.
-        config_yaml_path (str): Path to the configuration YAML file.
-        exp_group_name (str): Name of the experiment group.
-        exp_name (str): Name of the experiment.
-    """
-    # Set random seed for reproducibility
-    if "seed" in configs:
+    if "seed" in configs.keys():
         seed_everything(configs["seed"])
     else:
-        print("Setting random seed to 0")
+        print("SEED EVERYTHING TO 0")
         seed_everything(0)
 
-    # Set precision for matrix multiplication if specified
-    if "precision" in configs:
+    if "precision" in configs.keys():
         torch.set_float32_matmul_precision(configs["precision"])
 
     log_path = configs["log_directory"]
 
-    # Initialize dataloader add-ons
-    dataloader_add_ons = configs["data"].get("dataloader_add_ons", [])
+    if "dataloader_add_ons" in configs["data"].keys():
+        dataloader_add_ons = configs["data"]["dataloader_add_ons"]
+    else:
+        dataloader_add_ons = []
 
-    # Initialize validation dataset and dataloader
     val_dataset = AudioDataset(
         configs, split="test", add_ons=dataloader_add_ons, dataset_json=dataset_json
     )
-    val_loader = DataLoader(val_dataset, batch_size=1)
 
-    # Determine checkpoint path
+    val_loader = DataLoader(
+        val_dataset,
+        batch_size=1,
+    )
+
+    try:
+        config_reload_from_ckpt = configs["reload_from_ckpt"]
+    except:
+        config_reload_from_ckpt = None
+
     checkpoint_path = os.path.join(log_path, exp_group_name, exp_name, "checkpoints")
-    os.makedirs(checkpoint_path, exist_ok=True)
 
-    # Copy configuration file to experiment directory
     wandb_path = os.path.join(log_path, exp_group_name, exp_name)
-    os.makedirs(wandb_path, exist_ok=True)
-    os.system(f"cp {config_yaml_path} {wandb_path}")
 
-    # Load checkpoint
-    resume_from_checkpoint = configs.get("reload_from_ckpt")
-    if os.listdir(checkpoint_path):
-        print(f"Loading checkpoint from path: {checkpoint_path}")
+    os.makedirs(checkpoint_path, exist_ok=True)
+    shutil.copy(config_yaml_path, wandb_path)
+
+    if len(os.listdir(checkpoint_path)) > 0:
+        print("Load checkpoint from path: %s" % checkpoint_path)
         restore_step, n_step = get_restore_step(checkpoint_path)
         resume_from_checkpoint = os.path.join(checkpoint_path, restore_step)
-        print(f"Resuming from checkpoint: {resume_from_checkpoint}")
-    elif resume_from_checkpoint:
-        print(f"Reloading checkpoint specified in config: {resume_from_checkpoint}")
+        print("Resume from checkpoint", resume_from_checkpoint)
+    elif config_reload_from_ckpt is not None:
+        resume_from_checkpoint = config_reload_from_ckpt
+        print("Reload ckpt specified in the config file %s" % resume_from_checkpoint)
     else:
-        raise ValueError("No checkpoint found and no reload_from_ckpt specified in config.")
+        print("Train from scratch")
+        resume_from_checkpoint = None
 
-    # Initialize model
     latent_diffusion = instantiate_from_config(configs["model"])
     latent_diffusion.set_log_dir(log_path, exp_group_name, exp_name)
 
-    # Retrieve evaluation parameters
-    eval_params = configs["model"]["params"]["evaluation_params"]
-    guidance_scale = eval_params["unconditional_guidance_scale"]
-    ddim_sampling_steps = eval_params["ddim_sampling_steps"]
-    n_candidates_per_samples = eval_params["n_candidates_per_samples"]
+    guidance_scale = configs["model"]["params"]["evaluation_params"][
+        "unconditional_guidance_scale"
+    ]
+    ddim_sampling_steps = configs["model"]["params"]["evaluation_params"][
+        "ddim_sampling_steps"
+    ]
+    n_candidates_per_samples = configs["model"]["params"]["evaluation_params"][
+        "n_candidates_per_samples"
+    ]
 
-    # Allowlist numpy globals for safe deserialization
-    torch.serialization.add_safe_globals([
-        numpy.core.multiarray.scalar,
-        numpy.dtype,
-        numpy.dtypes.Float64DType
-    ])
+    checkpoint = torch.load(resume_from_checkpoint)
+    latent_diffusion.load_state_dict(checkpoint["state_dict"])
 
-    try:
-        # Load checkpoint with weights_only=True for security
-        checkpoint = torch.load(resume_from_checkpoint, weights_only=True, map_location="cpu")
-        latent_diffusion.load_state_dict(checkpoint["state_dict"])
-    except Exception as e:
-        print(f"Error loading checkpoint: {str(e)}")
-        raise
-
-    # Move model to GPU and set to evaluation mode
     latent_diffusion.eval()
     latent_diffusion = latent_diffusion.cuda()
 
-    # Generate samples
     latent_diffusion.generate_sample(
         val_loader,
         unconditional_guidance_scale=guidance_scale,
@@ -105,47 +90,46 @@ def infer(dataset_json, configs, config_yaml_path, exp_group_name, exp_name):
         n_gen=n_candidates_per_samples,
     )
 
+
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Inference script for AudioLDM model.")
+    parser = argparse.ArgumentParser()
+
     parser.add_argument(
+        "-c",
         "--config_yaml",
         type=str,
-        required=True,
-        help="Path to the configuration YAML file."
+        required=False,
+        help="path to config .yaml file",
     )
+
     parser.add_argument(
+        "-l",
         "--list_inference",
         type=str,
-        required=True,
-        help="Path to the file containing captions for inference."
+        required=False,
+        help="The filelist that contain captions (and optionally filenames)",
     )
     parser.add_argument(
+        "-reload_from_ckpt",
         "--reload_from_ckpt",
         type=str,
         required=True,
-        help="Path to the model checkpoint for reloading."
+        help="the checkpoint path for the model",
     )
 
     args = parser.parse_args()
 
-    # Verify CUDA availability
-    if not torch.cuda.is_available():
-        raise RuntimeError("CUDA is not available.")
+    assert torch.cuda.is_available(), "CUDA is not available"
 
-    # Load configuration
-    config_yaml_path = args.config_yaml
-    if not os.path.exists(config_yaml_path):
-        raise FileNotFoundError(f"Configuration file not found: {config_yaml_path}")
-
-    config_yaml = yaml.load(open(config_yaml_path, "r"), Loader=yaml.FullLoader)
-    config_yaml["reload_from_ckpt"] = args.reload_from_ckpt
-
-    # Build dataset JSON from inference list
+    config_yaml = args.config_yaml
     dataset_json = build_dataset_json_from_list(args.list_inference)
+    exp_name = os.path.basename(config_yaml.split(".")[0])
+    exp_group_name = os.path.basename(os.path.dirname(config_yaml))
 
-    # Extract experiment names
-    exp_name = os.path.basename(config_yaml_path).split(".")[0]
-    exp_group_name = os.path.basename(os.path.dirname(config_yaml_path))
+    config_yaml_path = os.path.join(config_yaml)
+    config_yaml = yaml.load(open(config_yaml_path, "r"), Loader=yaml.FullLoader)
 
-    # Run inference
+    if args.reload_from_ckpt != None:
+        config_yaml["reload_from_ckpt"] = args.reload_from_ckpt
+
     infer(dataset_json, config_yaml, config_yaml_path, exp_group_name, exp_name)
