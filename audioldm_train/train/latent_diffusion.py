@@ -25,7 +25,7 @@ from pytorch_lightning.loggers import WandbLogger
 import logging
 
 # Add project root to system path
-sys.path.append(os.path.join(os.path.dirname(__file__), "..", "..))
+sys.path.append(os.path.join(os.path.dirname(__file__), "..", ".."))
 
 from audioldm_train.utilities.data.dataset import AudioDataset
 from audioldm_train.utilities.tools import (
