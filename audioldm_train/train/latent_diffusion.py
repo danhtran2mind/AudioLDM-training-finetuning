@@ -23,7 +23,10 @@ from pytorch_lightning import Trainer, seed_everything
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import WandbLogger
 
-sys.path.append("src")
+import logging
+
+# Add project root to system path
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 from audioldm_train.utilities.data.dataset import AudioDataset
 from audioldm_train.utilities.tools import (
@@ -31,7 +34,7 @@ from audioldm_train.utilities.tools import (
     copy_test_subset_data,
 )
 from audioldm_train.utilities.model_util import instantiate_from_config
-import logging
+
 
 logging.basicConfig(level=logging.WARNING)
 
