@@ -253,9 +253,7 @@ if __name__ == "__main__":
         config_yaml["reload_from_ckpt"] = args.reload_from_ckpt
 
     if perform_validation:
-        config_yaml["model"]["params"]["cond_stage_config"][
-            "crossattn_audiomae_generated"
-        ]["params"]["use_gt_mae_output"] = False
+        config_yaml["model"]["params"]["cond_stage_config"]["crossattn_audiomae_generated"]["params"]["use_gt_mae_output"] = False
         config_yaml["step"]["limit_val_batches"] = None
 
     main(config_yaml, config_yaml_path, exp_group_name, exp_name, perform_validation, accelerator, wandb_off)
