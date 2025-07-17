@@ -1,12 +1,9 @@
 import sys
 
-sys.path.append("src")
 import os
 import pandas as pd
 import yaml
-import audioldm_train.utilities.audio as Audio
-from audioldm_train.utilities.tools import load_json
-from audioldm_train.dataset_plugin import *
+
 from librosa.filters import mel as librosa_mel_fn
 
 import random
@@ -16,6 +13,14 @@ import torch
 import numpy as np
 import torchaudio
 import json
+
+
+# Add project root to system path
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+
+import audioldm_train.utilities.audio as Audio
+from audioldm_train.utilities.tools import load_json
+from audioldm_train.dataset_plugin import *
 
 
 def dynamic_range_compression_torch(x, C=1, clip_val=1e-5):
