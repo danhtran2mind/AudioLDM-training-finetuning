@@ -17,7 +17,6 @@ import torch
 from tqdm import tqdm
 from pytorch_lightning.strategies.ddp import DDPStrategy
 
-
 from torch.utils.data import DataLoader
 from pytorch_lightning import Trainer, seed_everything
 from pytorch_lightning.callbacks import ModelCheckpoint
@@ -26,7 +25,7 @@ from pytorch_lightning.loggers import WandbLogger
 import logging
 
 # Add project root to system path
-sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+sys.path.append(os.path.join(os.path.dirname(__file__), "..", "..))
 
 from audioldm_train.utilities.data.dataset import AudioDataset
 from audioldm_train.utilities.tools import (
@@ -34,7 +33,6 @@ from audioldm_train.utilities.tools import (
     copy_test_subset_data,
 )
 from audioldm_train.utilities.model_util import instantiate_from_config
-
 
 logging.basicConfig(level=logging.WARNING)
 
